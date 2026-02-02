@@ -1,0 +1,86 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!DOCTYPE html>\
+<html lang="en">\
+<head>\
+  <meta charset="UTF-8" />\
+  <title>Claim Item</title>\
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>\
+  <style>\
+    body \{ font-family: sans-serif; max-width: 400px; margin: 2rem auto; \}\
+    input, button \{ width: 100%; padding: 0.5rem; margin-top: 1rem; \}\
+    p \{ margin-top: 0.5rem; \}\
+  </style>\
+</head>\
+<body>\
+\
+<h2 id="itemName">Item</h2>\
+<p id="status">Loading status\'85</p>\
+\
+<label for="name">Your name</label>\
+<input id="name" placeholder="Enter your name" />\
+\
+<button onclick="submit()">I have this item</button>\
+\
+<script>\
+  // ---- Replace these with your Supabase credentials ----\
+  const SUPABASE_URL = "https://fmaoikmmenyxkocwpakx.supabase.co";\
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtYW9pa21tZW55eGtvY3dwYWt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTc1NjIsImV4cCI6MjA4NTYzMzU2Mn0.Z8iJm6nbDiFggzu_2XIiIbSp5qjjb8HMTTr1DI-OPNE";\
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);\
+\
+  // Get the item id from URL\
+  const params = new URLSearchParams(window.location.search);\
+  const itemId = params.get("item");\
+\
+  const nameInput = document.getElementById("name");\
+  const statusEl = document.getElementById("status");\
+\
+  // Suggest name from previous session if available\
+  const storedName = localStorage.getItem("name");\
+  if (storedName) nameInput.value = storedName;\
+\
+  // Load item info from DB\
+  async function loadItem() \{\
+    const \{ data \} = await sb.from("items").select("*").eq("id", itemId).single();\
+    if (data) \{\
+      document.getElementById("itemName").innerText = data.name;\
+      statusEl.innerText = data.current_holder\
+        ? `Currently with: $\{data.current_holder\}`\
+        : "Currently with: nobody";\
+    \}\
+  \}\
+\
+  // Handle submission\
+  async function submit() \{\
+    const name = nameInput.value.trim();\
+    if (!name) return alert("Please enter your name");\
+\
+    localStorage.setItem("name", name);\
+\
+    await sb.from("items").update(\{\
+      current_holder: name,\
+      updated_at: new Date()\
+    \}).eq("id", itemId);\
+\
+    await sb.from("logs").insert(\{\
+      item_id: itemId,\
+      holder_name: name\
+    \});\
+\
+    statusEl.innerText = `Now with: $\{name\}`;\
+  \}\
+\
+  loadItem();\
+</script>\
+\
+</body>\
+</html>\
+\
+\
+\
+}
